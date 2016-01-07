@@ -78,6 +78,19 @@
         public static readonly DependencyProperty SourceImageProperty =
             DependencyProperty.Register("SourceImage", typeof(WriteableBitmap), typeof(ImageCropper), new PropertyMetadata(null, OnSourceImageChanged));
 
+        /// <summary>
+        /// Set this to use a set aspect ratio, default is 0 which will not enforce a ratio
+        /// This number is the HEIGHT divided by the WIDTH of the size you want (i.e. a square is 1, 16:9 is 0.5625, 4:3 is 0.75)
+        /// </summary>
+        public double AspectRatioMultiplier
+        {
+            get { return (double)GetValue(AspectRatioMultiplierProperty); }
+            set { SetValue(AspectRatioMultiplierProperty, value); }
+        }
+
+        public static readonly DependencyProperty AspectRatioMultiplierProperty = DependencyProperty.Register(
+            "AspectRatioMultiplier", typeof (double), typeof (ImageCropper), new PropertyMetadata(default(double)));
+        
         private static async void OnSourceImageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var that = d as ImageCropper;
@@ -242,9 +255,16 @@
 
                 var side = Math.Max(Math.Abs(xUpdate), Math.Abs(yUpdate));
 
+                var leftUpdate = side * Math.Sign(xUpdate);
+                var topUpdate = side * Math.Sign(yUpdate);
+
+                //if there was an aspect ratio set (zero is default value) the lock the sides when cropping
+                if (this.AspectRatioMultiplier > 0)
+                    topUpdate = leftUpdate * this.AspectRatioMultiplier;
+
                 this.selectedRegion.UpdateCorner((sender as ContentControl).Tag as string,
-                    side * Math.Sign(xUpdate),
-                    side * Math.Sign(yUpdate));
+                        leftUpdate,
+                        topUpdate);
 
                 pointerPositionHistory[ptrId] = currentPosition;
             }
@@ -342,7 +362,11 @@
 
                 // Always Reset Selected Region
                 var width = Math.Min(e.NewSize.Width, e.NewSize.Height);
-                this.selectedRegion.ResetCorner(0, 0, width, width);
+
+                if (this.AspectRatioMultiplier > 0)
+                    this.selectedRegion.ResetCorner(0, 0, width, width * this.AspectRatioMultiplier);
+                else
+                    this.selectedRegion.ResetCorner(0, 0, width, width);
 
                 this.UpdatePreviewImage();
             }

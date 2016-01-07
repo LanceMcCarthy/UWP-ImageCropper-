@@ -42,6 +42,7 @@ namespace XamlBrewer.Uwp.ImageCropperSample
                 var wb = new WriteableBitmap(1,1);
                 await wb.LoadAsync(imgFile);
                 this.ImageCropper.SourceImage = wb;
+                ToggleButtons(false);
             }
         }
 
@@ -58,6 +59,24 @@ namespace XamlBrewer.Uwp.ImageCropperSample
             {
                 await (this.CroppedImage.Source as WriteableBitmap).SaveAsync(file);
             }
+        }
+
+        private void AspectRatioRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            //using Tag for simple approach for the demo, please don't use in a production app.
+            //instead create a strongly typed List<double> or similar
+            var radioButton = sender as RadioButton;
+
+            double ratio;
+            if (double.TryParse(radioButton.Tag as string, out ratio))
+                this.ImageCropper.AspectRatioMultiplier = ratio;
+        }
+
+        private void ToggleButtons(bool isEnabled)
+        {
+            AspectRatioRadioButtonNone.IsEnabled = isEnabled;
+            AspectRatioRadioButtonSquare.IsEnabled = isEnabled;
+            AspectRatioRadioButton16x9.IsEnabled = isEnabled;
         }
     }
 }
